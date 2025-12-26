@@ -1,0 +1,99 @@
+import os
+import json
+import base64
+import requests
+from dotenv import load_dotenv
+from utils.storage import VoiceStorage
+from pathlib import Path
+
+load_dotenv()
+
+class VoiceCloneService:
+    def __init__(self):
+        self.api_key = os.getenv("DASHSCOPE_API_KEY")
+        self.storage = VoiceStorage("data/cloned_voices.json")
+        self.customization_url = "https://dashscope.aliyuncs.com/api/v1/services/audio/tts/customization"
+        
+        self.target_model = "qwen3-tts-vc-realtime-2025-11-27"
+    
+    def clone_voice(self, audio_file, preferred_name=None, display_name=None):
+        if not self.api_key:
+            raise ValueError("未找到API Key，请先配置")
+        
+        file_path = Path(audio_file)
+        if not file_path.exists():
+            raise FileNotFoundError(f"音频文件不存在: {audio_file}")
+        
+        with open(file_path, "rb") as f:
+            header = f.read(44)
+            if len(header) < 44:
+                raise ValueError("音频文件格式不正确")
+            sample_rate = int.from_bytes(header[24:28], "little")
+            channels = int.from_bytes(header[22:24], "little")
+            bits_per_sample = int.from_bytes(header[34:36], "little")
+            data_size = int.from_bytes(header[40:44], "little")
+            if sample_rate == 0 or channels == 0 or bits_per_sample == 0:
+                raise ValueError("音频文件元数据异常")
+            duration = data_size / (sample_rate * channels * (bits_per_sample // 8))
+            if duration < 3.0:
+                raise ValueError("音频过短，请上传至少3秒的音频")
+        
+        audio_data = file_path.read_bytes()
+        base64_str = base64.b64encode(audio_data).decode()
+        data_uri = f"data:audio/wav;base64,{base64_str}"
+        
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": "qwen-voice-enrollment",
+            "input": {
+                "action": "create",
+                "target_model": self.target_model,
+                "preferred_name": preferred_name,
+                "audio": {"data": data_uri, "format": "wav"}
+            }
+        }
+        
+        try:
+            response = requests.post(
+                self.customization_url,
+                headers=headers,
+                json=payload,
+                timeout=60
+            )
+            print(f"克隆接口状态码: {response.status_code}")
+            print(f"克隆接口返回: {response.text[:500]}")
+            response.raise_for_status()
+            result = response.json()
+            
+            voice_name = result["output"]["voice"]
+            
+            self.storage.add_voice(
+                voice_name=voice_name,
+                description="录音克隆",
+                display_name=display_name or preferred_name or voice_name,
+                audio_file=audio_file
+            )
+            
+            return {
+                "voice_name": voice_name,
+                "description": "录音克隆",
+                "display_name": display_name or preferred_name or voice_name,
+                "audio_file": audio_file,
+                "created_at": result.get("created_at", "")
+            }
+            
+        except requests.exceptions.RequestException as e:
+            raise Exception(f"声音克隆失败: {e}; 响应: {response.text if 'response' in locals() else 'N/A'}")
+        except Exception as e:
+            raise Exception(f"发生错误: {e}")
+    
+    def list_voices(self):
+        voices = self.storage.list_voices()
+        return voices
+    
+    def delete_voice(self, voice_name):
+        return self.storage.delete_voice(voice_name)

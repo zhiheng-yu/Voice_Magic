@@ -1,0 +1,508 @@
+# 元视界 AI 妙妙屋—魔法语音
+
+基于千问 3 TTS 的音色创造和音色克隆 Web 应用
+
+## 项目简介
+
+元视界 AI 妙妙屋—魔法语音是一个功能强大的语音合成应用，让你轻松创造和克隆个性化音色。通过简单的文字描述或录音，你就能生成独特的语音风格，并实时预览和使用这些音色进行文本转语音。
+
+### 核心亮点
+
+- **智能音色创造**：通过自然语言描述生成个性化音色
+- **高质量音色克隆**：录制 10 秒语音即可克隆专属音色
+- **实时音频预览**：立即试听生成的音色效果
+- **流式语音合成**：通过 WebSocket 实现低延迟的语音合成
+- **响应式设计**：适配各种屏幕尺寸的现代化界面
+
+## 技术栈
+
+### 后端
+
+- **FastAPI 0.100+** - 高性能 Python Web 框架
+- **WebSocket** - 实时通信协议
+- **DashScope SDK** - 千问 TTS API 客户端
+- **Python 3.8+** - 编程语言
+
+### 前端
+
+- **Vue 3** - 渐进式 JavaScript 框架
+- **Vite** - 下一代前端构建工具
+- **Pinia** - Vue 3 状态管理
+- **Element Plus** - 基于 Vue 3 的 UI 组件库
+- **WebSocket API** - 浏览器实时通信接口
+
+## 项目结构
+
+```
+Voice_Magic/
+├── backend/                    # 后端项目
+│   ├── main.py                # FastAPI 主入口（包含静态文件服务配置）
+│   ├── requirements.txt        # Python 依赖列表
+│   ├── .env.example           # 环境变量示例文件
+│   ├── .env                   # 环境变量（实际使用时配置）
+│   ├── previews/              # 音频预览文件存储目录
+│   ├── api/                   # API 路由模块
+│   │   ├── voice_design.py    # 音色创造 API 端点
+│   │   ├── voice_clone.py     # 音色克隆 API 端点
+│   │   ├── settings.py        # 设置 API 端点
+│   │   └── tts.py            # TTS WebSocket API 端点
+│   ├── services/              # 业务逻辑层
+│   │   ├── voice_design_service.py  # 音色创造业务逻辑
+│   │   ├── voice_clone_service.py   # 音色克隆业务逻辑
+│   │   └── tts_service.py           # TTS 流式服务逻辑
+│   ├── models/                # 数据模型定义
+│   │   └── schemas.py        # Pydantic 模型定义
+│   ├── utils/                 # 工具函数
+│   │   └── storage.py        # 文件和数据存储工具
+│   └── data/                  # 数据存储目录
+│       ├── voices.json        # 创造的音色数据
+│       ├── cloned_voices.json # 克隆的音色数据
+│       └── settings.json      # 应用设置
+├── frontend/                  # 前端项目
+│   ├── src/
+│   │   ├── main.js            # Vue 应用入口
+│   │   ├── App.vue            # 根组件
+│   │   ├── router/            # Vue Router 配置
+│   │   ├── views/             # 页面组件
+│   │   │   ├── Home.vue       # 首页
+│   │   │   ├── VoiceDesign.vue # 音色创造页面
+│   │   │   └── VoiceClone.vue  # 音色克隆页面
+│   │   ├── components/        # 可复用组件
+│   │   │   └── SettingsModal.vue # 设置弹窗组件
+│   │   ├── api/               # API 调用封装
+│   │   └── stores/            # Pinia 状态管理
+│   ├── public/                # 静态资源
+│   ├── package.json           # npm 依赖
+│   └── vite.config.js         # Vite 配置
+└── README.md                  # 项目说明文档
+```
+
+## 快速开始
+
+### 1. 环境准备
+
+#### 方式一：本地开发环境
+
+- Python 3.8+ （推荐使用 Python 3.10）
+- Node.js 16+ （推荐使用 Node.js 18+）
+- npm 或 yarn 包管理工具
+
+#### 方式二：Docker 环境（推荐，一键部署）
+
+- Docker 20.10+
+- Docker Compose 1.29+
+
+### 2. Docker 部署（推荐）
+
+```bash
+# 1. 配置环境变量
+# 复制后端的环境变量示例文件
+cp backend/.env.example backend/.env
+# 编辑 .env 文件，填入你的千问 API Key
+
+# 2. 启动服务（在项目根目录执行）
+docker-compose up -d
+
+# 3. 访问应用
+# 前端：http://localhost
+# 后端 API：http://localhost:8000
+# API 文档：http://localhost:8000/docs
+```
+
+### 3. 本地开发模式
+
+#### 3.1 后端设置
+
+```bash
+# 进入后端目录
+cd backend
+
+# 创建并激活虚拟环境（可选但推荐）
+python -m venv venv
+# Windows: venv\Scripts\activate
+# Linux/Mac: source venv/bin/activate
+
+# 安装依赖
+pip install -r requirements.txt
+
+# 配置环境变量
+# 复制示例文件并修改
+cp .env.example .env
+# 编辑 .env 文件，填入你的千问 API Key
+```
+
+环境变量说明：
+
+```env
+# 千问 API Key（必填）
+DASHSCOPE_API_KEY=your_api_key_here
+
+# 地域选择（可选，默认：beijing）
+# 可选值：beijing, singapore
+REGION=beijing
+```
+
+```bash
+# 启动后端服务
+python main.py
+```
+
+后端服务将在 http://localhost:8000 启动
+
+#### 3.2 前端设置
+
+```bash
+# 进入前端目录
+cd frontend
+
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+```
+
+前端服务将在 http://localhost:3000 启动
+
+## 功能说明
+
+### 1. 音色创造模式
+
+**步骤：**
+
+1. 在"音色创造"页面输入详细的音色描述（例如："温柔的女声，音色甜美，语速适中，带有轻微的江南口音"）
+2. 输入预览文本（可选，用于生成音色预览）
+3. 点击"创建音色"按钮
+4. 等待系统生成音色（通常需要 10-30 秒）
+5. 生成完成后，在音色列表中会显示新创建的音色
+6. 点击音色卡片上的"播放"按钮预览音色效果
+7. 选择音色，输入要转换的文字，点击"生成语音"按钮进行流式合成
+
+**提示：**
+
+- 描述越详细，生成的音色越符合预期
+- 可以尝试不同的形容词组合，如"低沉"、"活泼"、"优雅"等
+
+### 2. 音色克隆模式
+
+**步骤：**
+
+1. 在"音色克隆"页面设置录音时长（建议 10 秒以上）
+2. 点击"开始录音"按钮，对着麦克风说话
+3. 点击"停止录音"按钮结束录音
+4. 预览录音内容，确保声音清晰
+5. 点击"克隆声音"按钮开始克隆（通常需要 1-2 分钟）
+6. 克隆完成后，在音色列表中会显示新克隆的音色
+7. 选择音色，输入文字进行语音合成
+
+**注意：**
+
+- 录音环境应保持安静，避免背景噪音
+- 建议使用高质量麦克风录制
+- 确保录音时长足够（至少 5 秒）
+
+### 3. 音频预览功能
+
+- 每个音色卡片都有一个"播放"按钮，点击即可预览音色
+- 预览音频文件存储在后端的 `previews/` 目录
+- 前端通过静态文件服务访问音频文件：`http://localhost:8000/previews/文件名.wav`
+
+### 4. 设置功能
+
+**步骤：**
+
+1. 点击页面右下角的"设置"按钮
+2. 在弹窗中输入千问 API Key
+3. 选择地域（北京或新加坡）
+4. 点击"保存"按钮
+
+**配置优先级：**
+
+- 前端设置优先于环境变量配置
+- 如果前端未设置 API Key，将使用 `.env` 文件中的配置
+
+## API 文档
+
+后端提供了完整的 API 文档：
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+### 核心 API 端点
+
+1. **音色创造**
+
+   - POST `/api/voice-design/create` - 创建新音色
+   - GET `/api/voice-design/list` - 获取所有创造的音色
+
+2. **音色克隆**
+
+   - POST `/api/voice-clone/create` - 克隆新音色
+   - GET `/api/voice-clone/list` - 获取所有克隆的音色
+
+3. **设置**
+
+   - GET `/api/settings` - 获取当前设置
+   - POST `/api/settings` - 更新设置
+
+4. **WebSocket TTS**
+
+   - ws://localhost:8000/ws/tts/streaming - 流式语音合成
+
+5. **静态文件**
+   - GET `/previews/{filename}` - 获取音频预览文件
+
+## API Key 获取
+
+1. 访问阿里云官网：https://help.aliyun.com/zh/model-studio/get-api-key
+2. 登录或注册阿里云账号
+3. 进入模型服务平台控制台
+4. 创建并获取 API Key
+5. 注意选择正确的地域（北京或新加坡）
+
+**重要提示：**
+
+- 不同地域的 API Key 不通用
+- 确保 API Key 安全，不要泄露给他人
+- 如果 API Key 失效，请生成新的并重新配置
+
+## 注意事项
+
+1. **首次使用**：必须配置 API Key 才能使用音色创造和克隆功能
+2. **性能要求**：建议使用高性能网络连接以获得最佳体验
+3. **浏览器兼容性**：
+   - 支持 Chrome 90+
+   - 支持 Edge 90+
+   - 支持 Firefox 88+
+   - 不支持 IE 浏览器
+4. **录音功能**：需要浏览器支持 MediaRecorder API
+5. **音频格式**：所有预览和合成的音频均为 WAV 格式
+6. **存储空间**：生成的音色和音频文件会占用本地存储空间
+
+## 开发说明
+
+### 后端开发
+
+```bash
+# 安装开发依赖（可选）
+pip install -r requirements.txt
+
+# 启动开发服务器（支持热重载）
+python main.py
+
+# 查看 API 文档
+# 访问 http://localhost:8000/docs
+```
+
+### 前端开发
+
+```bash
+# 安装依赖
+npm install
+
+# 启动开发服务器
+npm run dev
+
+# 构建生产版本
+npm run build
+
+# 预览生产版本
+npm run preview
+```
+
+## 部署说明
+
+### 1. Docker Compose 一键部署（推荐）
+
+```bash
+# 1. 配置环境变量
+cp backend/.env.example backend/.env
+# 编辑 .env 文件，填入你的千问 API Key
+
+# 2. 启动所有服务
+# -d 参数表示后台运行
+docker-compose up -d
+
+# 3. 查看服务状态
+docker-compose ps
+
+# 4. 停止服务
+docker-compose down
+
+# 5. 查看日志
+docker-compose logs -f
+
+# 6. 重建服务（更新代码后使用）
+docker-compose up -d --build
+```
+
+### 2. 独立部署
+
+#### 2.1 后端部署
+
+**使用 uvicorn（推荐）：**
+
+```bash
+cd backend
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+**使用 Docker 独立部署：**
+
+```bash
+cd backend
+# 构建镜像
+docker build -t voice-magic-backend .
+# 运行容器
+docker run -d -p 8000:8000 --name voice-magic-backend -e DASHSCOPE_API_KEY=your_api_key voice-magic-backend
+```
+
+#### 2.2 前端部署
+
+**构建生产版本：**
+
+```bash
+cd frontend
+npm run build
+```
+
+**使用 Docker 独立部署：**
+
+```bash
+cd frontend
+# 构建镜像
+docker build -t voice-magic-frontend .
+# 运行容器
+docker run -d -p 80:80 --name voice-magic-frontend voice-magic-frontend
+```
+
+**使用 Nginx 部署：**
+
+将 `dist/` 目录部署到任意静态文件服务器（如 Nginx、Apache 等）
+
+```nginx
+server {
+    listen 80;
+    server_name example.com;
+
+    location / {
+        root /path/to/frontend/dist;
+        index index.html;
+        try_files $uri $uri/ /index.html;
+    }
+
+    location /api {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /ws {
+        proxy_pass http://localhost:8000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+    }
+
+    location /previews {
+        proxy_pass http://localhost:8000;
+    }
+}
+```
+
+## 常见问题
+
+### Q: 为什么创建音色失败？
+
+A: 请检查：
+
+1. API Key 是否正确配置
+2. 网络连接是否正常
+3. 描述是否符合要求（建议 10-50 个字符）
+
+### Q: 为什么音频预览无法播放？
+
+A: 请检查：
+
+1. 后端服务器是否正在运行
+2. 音频文件是否存在于 `backend/previews/` 目录
+3. 浏览器控制台是否有错误信息
+
+### Q: 为什么录音功能无法使用？
+
+A: 请检查：
+
+1. 浏览器是否支持 MediaRecorder API
+2. 是否已授予麦克风权限
+3. 是否有其他应用占用麦克风
+
+### Q: 如何提高音色质量？
+
+A: 建议：
+
+1. 提供更详细的音色描述
+2. 使用高质量的录音设备
+3. 在安静的环境中录音
+4. 确保录音时长足够（10 秒以上）
+
+### Q: Docker 部署时遇到端口占用怎么办？
+
+A: 可以修改 `docker-compose.yml` 文件中的端口映射：
+
+```yaml
+services:
+  backend:
+    ports:
+      - "8001:8000" # 改为其他端口，如 8001
+  frontend:
+    ports:
+      - "81:80" # 改为其他端口，如 81
+```
+
+### Q: Docker 容器启动后立即退出怎么办？
+
+A: 查看容器日志以确定问题：
+
+```bash
+docker-compose logs backend
+```
+
+常见问题：
+
+1. API Key 未配置：确保 `.env` 文件中已正确设置 DASHSCOPE_API_KEY
+2. 端口冲突：检查端口是否被其他服务占用
+3. 权限问题：确保 `previews` 目录有正确的读写权限
+
+### Q: 使用 Docker 时如何访问音频文件？
+
+A: 音频文件存储在后端容器的 `/app/previews` 目录，通过卷挂载映射到本地的 `backend/previews` 目录。可以直接在本地访问该目录，也可以通过 API 访问：`http://localhost:8000/previews/文件名.wav`
+
+## 许可证
+
+MIT License
+
+## 更新日志
+
+### v1.0.0 (2025-12-26)
+
+- 初始版本发布
+- 实现音色创造和克隆功能
+- 支持实时音频预览
+- 实现流式语音合成
+- 响应式界面设计
+
+## 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+## 联系方式
+
+如有问题或建议，请通过以下方式联系：
+
+- 项目地址：https://github.com/yourusername/voice-magic
+- 邮箱：your.email@example.com

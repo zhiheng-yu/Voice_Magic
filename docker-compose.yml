@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: voice-magic-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DASHSCOPE_API_KEY=${DASHSCOPE_API_KEY}
+      - PYTHONUNBUFFERED=1
+      - HOST=0.0.0.0
+      - PORT=8000
+    volumes:
+      - ./backend/previews:/app/previews
+    restart: unless-stopped
+    networks:
+      - voice-magic-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: voice-magic-frontend
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    networks:
+      - voice-magic-network
+    depends_on:
+      - backend
+
+networks:
+  voice-magic-network:
+    driver: bridge
