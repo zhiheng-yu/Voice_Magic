@@ -23,7 +23,7 @@ async def to_pinyin(req: PinyinRequest):
         flat = "".join("".join(x) for x in py)
     else:
         flat = s
-    slug = re.sub(r"[^a-zA-Z0-9]+", "", flat).lower()[:32]
+    slug = re.sub(r"[^a-zA-Z0-9]+", "", flat).lower()[:16]
     if not slug:
         slug = f"voice-{len(s)}"
     return {"slug": slug}

@@ -238,15 +238,15 @@ const showSettings = () => {}
 const toSlug = async (s) => {
   const isAscii = /^[a-zA-Z0-9\-\s]+$/.test(s || '')
   if (isAscii) {
-    const ascii = (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    return ascii || `voice-${Date.now()}`
+    const ascii = (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 16)
+    return ascii || `v${Date.now()}`
   }
   try {
     const { slug } = await api.post('/utils/pinyin', { text: s || '' })
-    return slug || `voice-${Date.now()}`
+    return slug || `v${Date.now()}`
   } catch {
-    const ascii = (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
-    return ascii || `voice-${Date.now()}`
+    const ascii = (s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').substring(0, 16)
+    return ascii || `v${Date.now()}`
   }
 }
 
