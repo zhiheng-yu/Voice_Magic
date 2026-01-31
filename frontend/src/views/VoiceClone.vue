@@ -40,6 +40,15 @@
             <span style="margin-left: 10px">秒</span>
           </el-form-item>
 
+          <el-form-item v-if="!remote_tts_env" label="录音文本">
+            <el-input
+              v-model="form.ref_text"
+              type="textarea"
+              :rows="2"
+              placeholder="请输入录音中的文字内容（建议与录音完全一致）"
+            />
+          </el-form-item>
+
           <el-form-item label="显示名称">
             <el-input
               v-model="form.display_name"
@@ -136,6 +145,7 @@
               v-model="selectedVoice"
               placeholder="请选择音色"
               style="width: 100%"
+              @change="handleVoiceChange"
             >
               <el-option
                 v-for="voice in cloneVoices"
@@ -188,9 +198,12 @@ import api from '@/api'
 const router = useRouter()
 const voiceStore = useVoiceStore()
 
+const remote_tts_env = import.meta.env.VITE_QWEN3_TTS_ENV === 'aliyun'
+
 const form = ref({
   preferred_name: '',
-  display_name: ''
+  display_name: '',
+  ref_text: ''
 })
 
 const recordDuration = ref(10)
@@ -204,6 +217,7 @@ const cloneMode = ref('record')
 const isSecureContext = ref(true)
 
 const selectedVoice = ref('')
+const ref_text = ref('')
 const ttsText = ref('')
 const audioUrl = ref('')
 const synthesizing = ref(false)
@@ -369,10 +383,6 @@ const goBack = () => {
   router.push('/')
 }
 
-const showSettings = () => {
-  settingsVisible.value = true
-}
-
 const toSlug = async (s) => {
   const isAscii = /^[a-zA-Z0-9\-\s]+$/.test(s || '')
   if (isAscii) {
@@ -481,12 +491,14 @@ const cloneVoice = async () => {
   formData.append('audio_file', wavBlob, 'recorded.wav')
   formData.append('preferred_name', await toSlug(form.value.display_name || form.value.preferred_name))
   formData.append('display_name', form.value.display_name || form.value.preferred_name || '')
+  formData.append('ref_text', form.value.ref_text || '')
 
   try {
     await cloneVoiceApi(formData)
     ElMessage.success('声音克隆成功')
     form.value.preferred_name = ''
     form.value.display_name = ''
+    form.value.ref_text = ''
     recordedBlob.value = null
     recordedUrl.value = ''
   } catch (error) {
@@ -497,6 +509,14 @@ const cloneVoice = async () => {
 
 const selectVoice = (voice) => {
   selectedVoice.value = voice.voice_name
+  ref_text.value = voice.ref_text
+}
+
+const handleVoiceChange = (voiceName) => {
+  const voice = cloneVoices.value.find(v => v.voice_name === voiceName)
+  if (voice) {
+    ref_text.value = voice.ref_text
+  }
 }
 
 const deleteVoice = async (voiceName) => {
@@ -505,6 +525,7 @@ const deleteVoice = async (voiceName) => {
     ElMessage.success('音色删除成功')
     if (selectedVoice.value === voiceName) {
       selectedVoice.value = ''
+      ref_text.value = ''
     }
   } catch (error) {
     ElMessage.error('音色删除失败: ' + error.message)
@@ -539,7 +560,8 @@ const synthesize = async () => {
       setTimeout(() => {
         ws.send(JSON.stringify({
           action: 'synthesize',
-          text: ttsText.value
+          text: ttsText.value,
+          ref_text: ref_text.value
         }))
       }, 500)
     }

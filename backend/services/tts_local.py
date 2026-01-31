@@ -46,7 +46,6 @@ class TTSServiceLocal(TTSServiceBase):
         return TTSServiceLocal._custom_model
 
     async def connect(self, websocket, message):
-        print(message)
         voice_type = message.get("voice_type", "official")
         voice_name = message.get("voice_name")
 
@@ -63,7 +62,6 @@ class TTSServiceLocal(TTSServiceBase):
         })
 
     async def synthesize(self, websocket, message):
-        print(message)
         if websocket not in self.active_connections:
             await websocket.send_json({"type": "error", "message": "请先连接"})
             return
@@ -74,14 +72,25 @@ class TTSServiceLocal(TTSServiceBase):
 
         # 同步生成
         try:
-            if voice_type == "design" or voice_type == "clone":
+            if voice_type == "design":
                 ref_audio = os.path.join(LOCAL_DIR, "../previews", voice_name + "_preview.wav")
-                print(ref_audio)
+                x_vector_only_mode = message.get("ref_text", "") == ""
                 wavs, sr = self.base_model.generate_voice_clone(
                     text=message.get("text"),
                     language=message.get("language", "auto"),
                     ref_audio=ref_audio,
-                    x_vector_only_mode=True,
+                    ref_text=message.get("ref_text", ""),
+                    x_vector_only_mode=x_vector_only_mode,
+                )
+            elif voice_type == "clone":
+                ref_audio = os.path.join(LOCAL_DIR, "../uploads", voice_name + "_cloned.wav")
+                x_vector_only_mode = message.get("ref_text", "") == ""
+                wavs, sr = self.base_model.generate_voice_clone(
+                    text=message.get("text"),
+                    language=message.get("language", "auto"),
+                    ref_audio=ref_audio,
+                    ref_text=message.get("ref_text", ""),
+                    x_vector_only_mode=x_vector_only_mode,
                 )
             elif voice_type == "official":
                 # 这是一个简化的示例，实际生成参数请根据 qwen_tts 的 API 调整

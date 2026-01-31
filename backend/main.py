@@ -5,11 +5,13 @@ import uvicorn
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from api import voice_design, voice_clone, tts, utils
+
+# 加载环境变量必须在导入 api 模块之前，以便 api 模块内部能正确读取配置
+load_dotenv()
+
+from api import voice_clone, voice_design, tts, utils
 from contextlib import asynccontextmanager
 
-
-load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -20,7 +22,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="元视界AI妙妙屋—声音魔法 API",
     description="基于千问3 TTS 的音色创造和音色克隆服务",
-    version="1.0.0",
+    version="1.2.0",
     lifespan=lifespan
 )
 
@@ -56,7 +58,7 @@ async def test_audio(filename: str):
 
 @app.get("/")
 async def root():
-    return {"message": "元视界AI妙妙屋—声音魔法 API", "version": "1.0.0"}
+    return {"message": "元视界AI妙妙屋—声音魔法 API", "version": "1.2.0"}
 
 @app.get("/health")
 async def health():
