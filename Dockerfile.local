@@ -65,7 +65,7 @@ RUN uv pip install --no-cache qwen-tts --system
 COPY backend/ ./
 
 # 确保必要的目录存在
-RUN mkdir -p previews data uploads samples
+RUN mkdir -p previews data uploads
 
 # 从第一阶段复制构建好的前端静态文件
 COPY --from=frontend-builder /app/frontend/dist /app/static
@@ -84,10 +84,6 @@ ENV HF_HUB_ENABLE_HF_TRANSFER=1
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-Base
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
-
-# 切换到离线模式，禁止程序在运行时尝试连接 Hugging Face 服务器
-ENV HF_HUB_OFFLINE=1
-ENV TRANSFORMERS_OFFLINE=1
 
 # 暴露端口
 EXPOSE 8000
