@@ -2,7 +2,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import os
 import json
 
-if os.getenv("VITE_QWEN3_TTS_ENV") == "aliyun":
+if os.getenv("QWEN3_TTS_ENV") == "aliyun":
     from services.tts_aliyun import TTSServiceAliyun as TTSService
 else:
     from services.tts_local import TTSServiceLocal as TTSService

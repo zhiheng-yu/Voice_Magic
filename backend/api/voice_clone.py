@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import List, Optional
 
-if os.getenv("VITE_QWEN3_TTS_ENV") == "aliyun":
+if os.getenv("QWEN3_TTS_ENV") == "aliyun":
     from services.clone_aliyun import CloneServiceAliyun as VoiceCloneService
 else:
     from services.clone_local import CloneServiceLocal as VoiceCloneService

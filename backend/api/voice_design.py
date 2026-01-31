@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
 
-if os.getenv("VITE_QWEN3_TTS_ENV") == "aliyun":
+if os.getenv("QWEN3_TTS_ENV") == "aliyun":
     from services.design_aliyun import DesignServiceAliyun as VoiceDesignService
 else:
     from services.design_local import DesignServiceLocal as VoiceDesignService
