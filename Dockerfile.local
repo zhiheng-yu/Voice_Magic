@@ -11,8 +11,9 @@ RUN npm run build
 # ==========================================
 # 第二阶段：最终运行环境 (支持 GPU)
 # ==========================================
-# 使用 NVIDIA CUDA 运行时作为基础镜像
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+# 使用 NVIDIA CUDA 开发版作为基础镜像 (支持编译 flash-attn)
+# RTX 5090 需要 CUDA 12.8+ 才能完整支持其 Blackwell 架构 (SM 10.0)
+FROM nvidia/cuda:12.8.0-devel-ubuntu22.04
 
 # 设置工作目录
 WORKDIR /app
@@ -28,6 +29,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     git \
     ffmpeg \
+    sox \
+    libsox-fmt-all \
     libsndfile1 \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
@@ -46,14 +49,16 @@ COPY backend/requirements.txt ./
 # 1. 安装基础依赖
 RUN uv pip install --no-cache -r requirements.txt --system
 
-# 2. 安装本地模型运行所需的深度学习依赖 (针对 CUDA 12.1)
-RUN uv pip install --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --system
+# 2. 安装本地模型运行所需的深度学习依赖 (针对 CUDA 12.8, 支持 RTX 5090)
+RUN uv pip install --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 --system
 
 # 3. 安装 Qwen3-TTS 核心库
 # 注意：如果 pypi 版本未发布，可能需要从 git 安装，这里先尝试 pypi
 RUN uv pip install --no-cache qwen-tts --system
 
 # 4. 可选：安装 FlashAttention 2 以优化性能 (构建时间较长，如不需要可注释掉)
+# 8.0 (A100), 8.6 (RTX 30), 8.9 (RTX 40), 9.0 (H100), 10.0 (RTX 50)
+# ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;10.0"
 # RUN uv pip install --no-cache flash-attn --no-build-isolation --system
 
 # 复制后端代码
@@ -68,11 +73,21 @@ COPY --from=frontend-builder /app/frontend/dist /app/static
 # 设置本地运行相关的环境变量
 ENV QWEN3_TTS_ENV=local
 ENV PORT=8000
-# 允许下载模型时的超时设置
-ENV HF_HUB_ENABLE_HF_TRANSFER=0
-
-# 设置 Hugging Face 缓存目录，方便外部挂载持久化
+# 设置 Hugging Face 缓存目录
 ENV HF_HOME=/app/models_cache
+
+# 安装 huggingface_hub 和 hf_transfer 用于加速在构建阶段下载模型
+RUN uv pip install --no-cache huggingface_hub[hf_transfer] --system
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
+
+# 在构建期间下载模型，避免运行时下载
+RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-Base
+RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
+RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+
+# 切换到离线模式，禁止程序在运行时尝试连接 Hugging Face 服务器
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
 
 # 暴露端口
 EXPOSE 8000
