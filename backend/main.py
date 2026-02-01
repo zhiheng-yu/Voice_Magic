@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 import uvicorn
 import os
 from pathlib import Path
@@ -36,12 +37,16 @@ app.add_middleware(
 
 BASE_DIR = Path(__file__).resolve().parent
 PREVIEWS_DIR = BASE_DIR / "previews"
+UPLOADS_DIR = BASE_DIR / "uploads"
 
-# 确保previews文件夹存在，不存在则创建
+# 确保文件夹存在
 if not PREVIEWS_DIR.exists():
     PREVIEWS_DIR.mkdir(parents=True, exist_ok=True)
+if not UPLOADS_DIR.exists():
+    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/previews", StaticFiles(directory=str(PREVIEWS_DIR)), name="previews")
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
 
 app.include_router(voice_design.router, prefix="/api/voice-design", tags=["音色创造"])
 app.include_router(voice_clone.router, prefix="/api/voice-clone", tags=["音色克隆"])
@@ -56,9 +61,27 @@ async def test_audio(filename: str):
     else:
         return {"exists": False, "path": str(file_path)}
 
-@app.get("/")
-async def root():
-    return {"message": "元视界AI妙妙屋—声音魔法 API", "version": "1.2.0"}
+# 挂载前端静态文件
+STATIC_DIR = BASE_DIR / "static"
+if STATIC_DIR.exists():
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # 排除 API、WS 和预览路径，让它们由各自的路由处理器处理或返回 404
+        if any(full_path.startswith(prefix) for prefix in ["api/", "ws/", "previews/", "uploads/"]):
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
+
+        # 检查是否请求的是具体的静态文件
+        file_path = STATIC_DIR / full_path
+        if full_path != "" and file_path.exists() and file_path.is_file():
+            return FileResponse(file_path)
+
+        # 默认返回 index.html 支持 Vue Router History 模式
+        return FileResponse(STATIC_DIR / "index.html")
+else:
+    @app.get("/")
+    async def root():
+        return {"message": "元视界AI妙妙屋—声音魔法 API", "version": "1.2.0"}
 
 @app.get("/health")
 async def health():
