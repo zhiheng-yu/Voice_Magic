@@ -50,7 +50,9 @@ COPY backend/requirements.txt ./
 RUN uv pip install --no-cache -r requirements.txt --system
 
 # 2. 安装本地模型运行所需的深度学习依赖 (针对 CUDA 12.8, 支持 RTX 5090)
-RUN uv pip install --no-cache torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128 --system
+RUN uv pip install --no-cache \
+    torch==2.8.0+cu128 torchvision==0.23.0+cu128 torchaudio==2.8.0+cu128 \
+    --index-url https://download.pytorch.org/whl/cu128 --system
 
 # 3. 安装 Qwen3-TTS 核心库
 # 注意：如果 pypi 版本未发布，可能需要从 git 安装，这里先尝试 pypi
