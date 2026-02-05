@@ -42,6 +42,7 @@ RUN ln -sf /usr/bin/python3.11 /usr/bin/python \
 # 安装 uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uv/bin/
 ENV PATH="/uv/bin:${PATH}"
+ENV UV_HTTP_TIMEOUT=600
 
 # 复制后端依赖文件
 COPY backend/requirements.txt ./
