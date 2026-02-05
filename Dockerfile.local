@@ -59,11 +59,6 @@ RUN uv pip install --no-cache \
 # 注意：如果 pypi 版本未发布，可能需要从 git 安装，这里先尝试 pypi
 RUN uv pip install --no-cache qwen-tts --system
 
-# 4. 可选：安装 FlashAttention 2 以优化性能 (构建时间较长，如不需要可注释掉)
-# 8.0 (A100), 8.6 (RTX 30), 8.9 (RTX 40), 9.0 (H100), 10.0 (RTX 50)
-# ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;10.0"
-# RUN uv pip install --no-cache flash-attn --no-build-isolation --system
-
 # 复制后端代码
 COPY backend/ ./
 
@@ -84,6 +79,11 @@ ENV HF_HUB_ENABLE_HF_TRANSFER=1
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-Base
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 RUN huggingface-cli download Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign
+
+# 可选：安装 FlashAttention 2 以优化性能 (构建时间较长，如不需要可注释掉)
+# 8.0 (A100), 8.6 (RTX 30), 8.9 (RTX 40), 9.0 (H100), 10.0 (RTX 50)
+# ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9;9.0;10.0"
+# RUN uv pip install --no-cache flash-attn --no-build-isolation --system
 
 # 设置本地运行相关的环境变量
 ENV QWEN3_TTS_ENV=local
